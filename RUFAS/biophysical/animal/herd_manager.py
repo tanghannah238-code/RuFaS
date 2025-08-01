@@ -135,6 +135,7 @@ class HerdManager:
         self.is_ration_defined_by_user = is_ration_defined_by_user
         ration_feed_config = self.im.get_data("feed")
         UserDefinedRationManager.set_user_defined_rations(ration_feed_config)
+        UserDefinedRationManager.set_user_defined_ration_tolerance(ration_feed_config)
         self.set_milk_type_in_calf_ration_manager()
         self._max_daily_feeds: dict[RUFAS_ID, float] = {}
 
@@ -413,11 +414,18 @@ class HerdManager:
         available_feeds: list[Feed],
         current_day_conditions: CurrentDayConditions,
         total_inventory: TotalInventory,
+        simulation_day: int,
     ) -> None:
         """Call the corresponding functions to update the herd structure and reassign animals to new pens."""
-        self._handle_graduated_animals(graduated_animals, available_feeds, current_day_conditions, total_inventory)
-        self._handle_newly_added_animals(newborn_calves, available_feeds, current_day_conditions, total_inventory)
-        self._handle_newly_added_animals(newly_added_animals, available_feeds, current_day_conditions, total_inventory)
+        self._handle_graduated_animals(
+            graduated_animals, available_feeds, current_day_conditions, total_inventory, simulation_day
+        )
+        self._handle_newly_added_animals(
+            newborn_calves, available_feeds, current_day_conditions, total_inventory, simulation_day
+        )
+        self._handle_newly_added_animals(
+            newly_added_animals, available_feeds, current_day_conditions, total_inventory, simulation_day
+        )
 
         for removed_animal in removed_animals:
             self._remove_animal_from_pen_and_id_map(removed_animal)
@@ -470,6 +478,7 @@ class HerdManager:
         graduated_animals += graduated_heiferIIs
         removed_animals += sold_heiferIIs
 
+        # TODO: Rank heifers to enter the herd or sold # GitHub Issue 1214
         (graduated_heiferIIIs, sold_heiferIIIs, sold_newborn_calves_from_heiferIIIs, newborn_calves_from_heiferIIIs) = (
             self._perform_daily_routines_for_animals(time, self.heiferIIIs)
         )
@@ -503,6 +512,7 @@ class HerdManager:
             available_feeds=available_feeds,
             current_day_conditions=weather.get_current_day_conditions(time),
             total_inventory=total_inventory,
+            simulation_day=time.simulation_day,
         )
 
         self.record_pen_history(time.simulation_day)
@@ -692,6 +702,7 @@ class HerdManager:
         available_feeds: list[Feed],
         current_day_conditions: CurrentDayConditions,
         total_inventory: TotalInventory,
+        simulation_day: int,
     ) -> None:
         """
         Reassigns animals that have graduated to a new pen, and updates the pen id map.
@@ -706,12 +717,16 @@ class HerdManager:
             Object representing the current conditions of the day.
         total_inventory : TotalInventory
             Inventory currently available or projected to be available at a future date.
+        simulation_day : int
+            Day of simulation.
 
         """
         for animal in graduated_animals:
             self._remove_animal_from_pen_and_id_map(animal)
             self._update_animal_array(animal)
-            self._add_animal_to_pen_and_id_map(animal, available_feeds, current_day_conditions, total_inventory)
+            self._add_animal_to_pen_and_id_map(
+                animal, available_feeds, current_day_conditions, total_inventory, simulation_day
+            )
 
     def _handle_newly_added_animals(
         self,
@@ -719,6 +734,7 @@ class HerdManager:
         available_feeds: list[Feed],
         current_day_conditions: CurrentDayConditions,
         total_inventory: TotalInventory,
+        simulation_day: int,
     ) -> None:
         """
         Adds newly added animals to their appropriate pen and updates the pen id map.
@@ -733,10 +749,14 @@ class HerdManager:
             Object representing the current conditions of the day.
         total_inventory : TotalInventory
             Inventory currently available or projected to be available at a future date.
+        simulation_day: int
+            Day of simulation.
 
         """
         for animal in new_animals:
-            self._add_animal_to_pen_and_id_map(animal, available_feeds, current_day_conditions, total_inventory)
+            self._add_animal_to_pen_and_id_map(
+                animal, available_feeds, current_day_conditions, total_inventory, simulation_day
+            )
             self._add_animal_to_new_array(animal)
 
     def _remove_animal_from_pen_and_id_map(self, animal: Animal) -> None:
@@ -760,6 +780,7 @@ class HerdManager:
         available_feeds: list[Feed],
         current_day_conditions: CurrentDayConditions,
         total_inventory: TotalInventory,
+        simulation_day: int,
     ) -> None:
         """
         Adds animal to pen with the lowest stocking density, and updates the pen id map accordingly.
@@ -774,6 +795,8 @@ class HerdManager:
             Object representing the current conditions of the day.
         total_inventory : TotalInventory
             Inventory currently available or projected to be available at a future date.
+        simulation_day : int
+            Day of simulation.
 
         """
         animal_combination = self.ANIMAL_GROUPING_SCENARIO.find_animal_combination(animal)
@@ -797,6 +820,7 @@ class HerdManager:
                 pen_available_feeds=pen_available_feeds,
                 current_temperature=current_day_conditions.mean_air_temperature,
                 total_inventory=total_inventory,
+                simulation_day=simulation_day,
             )
 
         self.animal_to_pen_id_map[animal.id] = pen_with_min_stocking_density.id
@@ -1217,7 +1241,7 @@ class HerdManager:
         for rufas_id in next_harvest_dates.keys():
             self._update_single_max_daily_feed(rufas_id, next_harvest_dates[rufas_id], total_inventory, time)
 
-        # TODO: calculate feeds that would ideally be purchased before next harvests based on "herd needs"
+        # TODO: calculate feeds that would ideally be purchased before next harvests based on "herd needs". Issue #2483.
         return IdealFeeds({})
 
     def _update_single_max_daily_feed(
@@ -1272,6 +1296,8 @@ class HerdManager:
             Length of the ration interval (days).
         total_inventory : TotalInventory
             The total inventory of all available feeds.
+        simulation_day : int
+            Day of simulation.
 
         Returns
         -------
@@ -1293,12 +1319,19 @@ class HerdManager:
                 pen.animal_combination
             )
             pen_available_feeds = self._find_pen_available_feeds(available_feeds, user_defined_ration_feed_ids)
-            self._reformulate_ration_single_pen(pen, pen_available_feeds, current_temperature, total_inventory)
+            self._reformulate_ration_single_pen(
+                pen, pen_available_feeds, current_temperature, total_inventory, simulation_day
+            )
             total_requested_feed += pen.get_requested_feed(ration_interval_length)
         return total_requested_feed
 
     def _reformulate_ration_single_pen(
-        self, pen: Pen, pen_available_feeds: list[Feed], current_temperature: float, total_inventory: TotalInventory
+        self,
+        pen: Pen,
+        pen_available_feeds: list[Feed],
+        current_temperature: float,
+        total_inventory: TotalInventory,
+        simulation_day: int,
     ) -> None:
         """
         Reformulates ration for a single pen.
@@ -1313,20 +1346,24 @@ class HerdManager:
             Current temperature (C).
         total_inventory : TotalInventory
             Inventory currently available or projected to be available at a future date.
+        simulation_day : int
+            Day of simulation.
 
         """
-        if self.is_ration_defined_by_user is True or pen.animal_combination == AnimalCombination.CALF:
+        if pen.animal_combination == AnimalCombination.LAC_COW and pen.average_milk_production == 0.0:
+            for animal in pen.animals_in_pen:
+                pen.animals_in_pen[animal].daily_milking_update_without_history()
+        if pen.animal_combination == AnimalCombination.CALF:
             pen.use_user_defined_ration(pen_available_feeds, current_temperature)
         else:
-            if pen.animal_combination == AnimalCombination.LAC_COW and pen.average_milk_production == 0.0:
-                for animal in pen.animals_in_pen:
-                    pen.animals_in_pen[animal].daily_milking_update_without_history()
             pen.formulate_optimized_ration(
+                self.is_ration_defined_by_user,
                 pen_available_feeds,
                 current_temperature,
                 self._max_daily_feeds,
                 self.advance_purchase_allowance,
                 total_inventory,
+                simulation_day,
             )
 
     def update_herd_statistics(self) -> None:

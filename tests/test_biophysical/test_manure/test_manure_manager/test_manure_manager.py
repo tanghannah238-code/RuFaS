@@ -962,7 +962,17 @@ def test_request_nutrients(
 def test_remove_nutrients_from_storage(
     manure_manager: ManureManager, is_nitrogen_limiting_nutrient: bool, mocker: MockerFixture
 ) -> None:
+@pytest.mark.parametrize("is_nitrogen_limiting_nutrient", [True, False])
+def test_remove_nutrients_from_storage(
+    manure_manager: ManureManager, is_nitrogen_limiting_nutrient: bool, mocker: MockerFixture
+) -> None:
     """Tests the function _remove_nutrients_from_storage()."""
+    mock_determine_limiting_nutrient = mocker.patch.object(
+        ManureManager, "_determine_limiting_nutrient", return_value=is_nitrogen_limiting_nutrient
+    )
+    mock_proportion = mocker.patch.object(
+        manure_manager, "_determine_nutrient_proportion_to_be_removed", return_value=0.8
+    )
     mock_determine_limiting_nutrient = mocker.patch.object(
         ManureManager, "_determine_limiting_nutrient", return_value=is_nitrogen_limiting_nutrient
     )
@@ -973,8 +983,12 @@ def test_remove_nutrients_from_storage(
     mock_compute = mocker.patch.object(
         ManureManager, "_compute_stream_after_removal", return_value=(MagicMock(ManureStream), {"nitrogen": 50})
     )
+    mock_compute = mocker.patch.object(
+        ManureManager, "_compute_stream_after_removal", return_value=(MagicMock(ManureStream), {"nitrogen": 50})
+    )
     composting = MagicMock(Composting)
     composting.stored_manure = MagicMock(ManureStream)
+    manure_manager.all_processors = {"non_storage": MagicMock(Digester), "storage": composting}
     manure_manager.all_processors = {"non_storage": MagicMock(Digester), "storage": composting}
 
     manure_manager._remove_nutrients_from_storage(NutrientRequestResults(nitrogen=10, phosphorus=20), ManureType.LIQUID)
@@ -1024,6 +1038,7 @@ def test_compute_stream_after_removal_with_real_manure_stream(
         degradable_volatile_solids=0.0,
         total_solids=0.0,
         volume=0.0,
+        methane_production_potential=0.24,
         pen_manure_data=None,
     )
 
@@ -1071,6 +1086,7 @@ def test_compute_stream_after_removal_with_real_manure_stream(
     ],
 )
 def test_determine_non_limiting_nutrient_removal_amount(portion: float, non_limiting: float, expected_removed: float):
+def test_determine_non_limiting_nutrient_removal_amount(portion: float, non_limiting: float, expected_removed: float):
     removed = ManureManager._determine_non_limiting_nutrient_removal_amount(
         limiting_nutrient_proportion_to_be_removed=portion,
         non_limiting_nutrients_amount=non_limiting,
@@ -1094,6 +1110,7 @@ def test_determine_limiting_nutrient_with_patched_scaling(
 ):
     seq = [n_mass, p_mass]
     mocker.patch.object(
+        ManureNutrientManager, "calculate_projected_manure_mass", side_effect=lambda requested, fraction: seq.pop(0)
         ManureNutrientManager, "calculate_projected_manure_mass", side_effect=lambda requested, fraction: seq.pop(0)
     )
 
