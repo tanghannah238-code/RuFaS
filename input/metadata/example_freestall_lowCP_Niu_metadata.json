@@ -10,7 +10,7 @@
     "animal": {
       "title": "Animal data",
       "description": "Input data and configuration information for animal management decisions, herd attributes, and housing properties.",
-      "path": "input/data/animal/lowCPdiet_scenario_animal.json",
+      "path": "input/data/animal/lowCPdiet_scenario_animal_Niu.json",
       "type": "json",
       "properties": "animal_properties"
     },

@@ -1,0 +1,61 @@
+{
+  "parallel_workers": 4,
+  "tasks": [
+    {
+      "task_type": "SIMULATION_SINGLE_RUN",
+      "metadata_file_path": "input/metadata/example_freestall_lowCP_metadata.json",
+      "output_prefix": "lowCP",
+      "log_verbosity": "errors",
+      "random_seed": 42
+    },
+    {
+      "task_type": "SIMULATION_SINGLE_RUN",
+      "metadata_file_path": "input/metadata/example_freestall_lowCP_3NOP_metadata.json",
+      "output_prefix": "lowCP_3NOP",
+      "log_verbosity": "errors",
+      "random_seed": 42
+    },
+    {
+      "task_type": "SIMULATION_SINGLE_RUN",
+      "metadata_file_path": "input/metadata/example_freestall_lowCP_Niu_metadata.json",
+      "output_prefix": "lowCP_Niu",
+      "log_verbosity": "errors",
+      "random_seed": 42
+    },
+    {
+      "task_type": "SIMULATION_SINGLE_RUN",
+      "metadata_file_path": "input/metadata/example_freestall_lowCP_Niu_3NOP_metadata.json",
+      "output_prefix": "lowCP_Niu_3NOP",
+      "log_verbosity": "errors",
+      "random_seed": 42
+    },
+    {
+      "task_type": "SIMULATION_SINGLE_RUN",
+      "metadata_file_path": "input/metadata/example_freestall_highCP_metadata.json",
+      "output_prefix": "highCP",
+      "log_verbosity": "errors",
+      "random_seed": 42
+    },
+    {
+      "task_type": "SIMULATION_SINGLE_RUN",
+      "metadata_file_path": "input/metadata/example_freestall_highCP_3NOP_metadata.json",
+      "output_prefix": "highCP_3NOP",
+      "log_verbosity": "errors",
+      "random_seed": 42
+    },
+    {
+      "task_type": "SIMULATION_SINGLE_RUN",
+      "metadata_file_path": "input/metadata/example_freestall_highCP_Niu_metadata.json",
+      "output_prefix": "highCP_Niu",
+      "log_verbosity": "errors",
+      "random_seed": 42
+    },
+    {
+      "task_type": "SIMULATION_SINGLE_RUN",
+      "metadata_file_path": "input/metadata/example_freestall_highCP_Niu_3NOP_metadata.json",
+      "output_prefix": "highCP_Niu_3NOP",
+      "log_verbosity": "errors",
+      "random_seed": 42
+    }
+  ]
+}

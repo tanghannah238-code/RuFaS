@@ -16,7 +16,7 @@
 		"5": 0.09
     },
 	"milking_cow_fraction": 0.8356,
-    "annual_milk_yield": null
+    "annual_milk_yield": 930250
   },
   "herd_initialization": {
     "initial_animal_num": 10000,
@@ -137,7 +137,7 @@
 		}
 	},
 	"methane_mitigation": {
-		"methane_mitigation_method": "None",
+		"methane_mitigation_method": "3-NOP",
 		"methane_mitigation_additive_amount": 0,
 		"3-NOP_additive_amount": 70,
 		"monensin_additive_amount": 24,
