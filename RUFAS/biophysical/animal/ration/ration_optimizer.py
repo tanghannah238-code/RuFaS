@@ -75,20 +75,22 @@ class RationConfig:
 
         Parameters
         ----------
+        nutrient_standard : NutrientStandard
+            Nutrient standard used in supply and requirement calculations.
         animal_requirements : NutritionRequirements
             Nutrition requirements for pen, used in constraint methods.
         pen_available_feeds : list[Feed], optional
             List of Feeds used in ration formulation.
         initial_dry_matter_requirement : float
-            Dry matter intake requirement at start of ration formulation.
+            Dry matter intake requirement at start of ration formulation, kg per cow per day.
         initial_protein_requirement : float
             Metabolizable protein requirement at start of ration formulation.
         pen_average_body_weight : float
-            Average body weight in pen, used in constraint methods.
+            Average body weight in pen, used in constraint methods, kg.
         pen_average_enteric_methane : float
-            Average enteric methane produced in pen, used in constraint methods.
+            Average enteric methane produced in pen, used in constraint methods, g.
         pen_average_urine_nitrogen : float
-            Average urine nitrogen generated in pen, used in constraint methods.
+            Average urine nitrogen generated in pen, used in constraint methods, kg.
         """
         self.nutrient_standard = nutrient_standard
         if pen_available_feeds is None:
@@ -135,18 +137,18 @@ class RationOptimizer:
         self.cow_constraints: list[dict[str, Callable[[Any, Any], float] | tuple[RationConfig] | str] | str] = []
         self.heifer_constraints: list[dict[str, Callable[[Any, Any], float] | tuple[RationConfig] | str] | str] = []
 
-    def set_constraints(self, arguments: tuple[RationConfig]) -> None:
+    def set_constraints(self, ration_config: RationConfig) -> None:
         """
         Defines lists of constraint methods to use for different pens.
 
         Parameters
         ----------
-        arguments : tuple[RationConfig]
+        ration_config : tuple[RationConfig]
             RationConfig used in constraint methods.
 
         """
 
-        self.constraint_functions = [
+        self.NRC_constraint_functions = [
             self.NE_total_constraint,
             self.NE_maintenance_and_activity_constraint,
             self.NE_lactation_constraint,
@@ -161,30 +163,32 @@ class RationOptimizer:
             self.fat_constraint,
             self.DMI_constraint_upper,
             self.DMI_constraint_lower,
+        ]
+        self.NASEM_constraint_functions = [
+            self.calcium_constraint,
+            self.phosphorus_constraint,
+            self.protein_constraint_lower,
+            self.protein_constraint_upper,
+            self.NDF_constraint_lower,
+            self.NDF_constraint_upper,
+            self.forage_NDF_constraint,
+            self.fat_constraint,
+            self.DMI_constraint_upper,
+            self.DMI_constraint_lower,
             self.NASEM_net_energy_constraint
         ]
 
-        if arguments[0].nutrient_standard is NutrientStandard.NRC:
+        if ration_config.nutrient_standard is NutrientStandard.NRC:
             self.cow_constraints = [
-                {"type": "ineq", "fun": func, "args": arguments}
-                for func in self.constraint_functions if func not in [
-                    self.NASEM_net_energy_constraint]]
+                {"type": "ineq", "fun": func, "args": (ration_config,)}
+                for func in self.NRC_constraint_functions]
 
             self.heifer_constraints = [
-                cons
-                for cons in self.cow_constraints
-                if cons["fun"] not in [self.NE_total_constraint,
-                                       self.NE_lactation_constraint,
-                                       self.NASEM_net_energy_constraint]
-            ]
-        elif arguments[0].nutrient_standard is NutrientStandard.NASEM:
+                constraint for constraint in self.cow_constraints
+                if constraint["fun"] not in [self.NE_total_constraint, self.NE_lactation_constraint]]
+        elif ration_config.nutrient_standard is NutrientStandard.NASEM:
             self.cow_constraints = [
-                {"type": "ineq", "fun": func, "args": arguments} for func in self.constraint_functions if func not in [
-                    self.NE_total_constraint,
-                    self.NE_lactation_constraint,
-                    self.NE_growth_constraint,
-                    self.NE_maintenance_and_activity_constraint]]
-
+                {"type": "ineq", "fun": func, "args": (ration_config,)} for func in self.NASEM_constraint_functions]
             self.heifer_constraints = self.cow_constraints
 
     @staticmethod
@@ -369,7 +373,8 @@ class RationOptimizer:
         ration_configuration: RationConfig
     ) -> float:
         """
-        Constraint method for net energy for lactation. Only applicable to lactating cows.
+        Constraint method for net energy for lactation. Applicable to all animal classes,
+        differing from NRC net energy calculations.
         This constraint is a simple check that the supply exceeds the requirement.
 
         Parameters
@@ -827,7 +832,7 @@ class RationOptimizer:
         animal_combination: AnimalCombination,
         previous_ration: dict[RUFAS_ID | str, float | str] | None = None,
         user_defined_ration_dictionary: dict[RUFAS_ID, float] | None = None,
-        user_defined_ration_tolerance: float = None,
+        user_defined_ration_tolerance: float | None = None,
     ) -> tuple[OptimizeResult, RationConfig]:
         """
         Function that sets up the nutrients and requirements lists into structured
@@ -835,8 +840,14 @@ class RationOptimizer:
 
         Parameters
         ----------
+        nutrient_standard : NutrientStandard
+            Nutrient standard used in supply and requirement calculations.
         pen_average_body_weight : float
             Average body weight of animals in pen.
+        pen_average_enteric_methane : float
+            Average enteric methane produced in pen, used in constraint methods, g.
+        pen_average_urine_nitrogen : float
+            Average urine nitrogen generated in pen, used in constraint methods, kg.
         requirements : AnimalRequirements
             Summary of requirements for a group of animals.
         pen_available_feeds : list[Feed]
@@ -885,9 +896,8 @@ class RationOptimizer:
             bounds = self._build_bounds(ration_config)
 
         initial_decision_vector = self._check_initial_bounds(bounds, initial_decision_vector)
-        arguments = (ration_config,)
 
-        self.set_constraints(arguments=arguments)
+        self.set_constraints(ration_config=ration_config)
 
         constraints_to_use = self._select_constraints(animal_combination)
 
@@ -897,7 +907,7 @@ class RationOptimizer:
             method="SLSQP",
             bounds=bounds,
             constraints=constraints_to_use,
-            args=arguments,
+            args=ration_config,
         )
 
         return optimized_ration_attempt, ration_config
