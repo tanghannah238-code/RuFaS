@@ -88,7 +88,7 @@
       "field_name": "field_1",
       "storage_type": "Bunker",
       "initial_storage_dry_matter": 0.35,
-      "rufas_id": 51,
+      "rufas_id": 50,
       "capacity": 1e10,
       "size": 0.0
     },
