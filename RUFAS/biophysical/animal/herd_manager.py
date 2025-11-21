@@ -1463,9 +1463,11 @@ class HerdManager:
 
         """
         if pen.animal_combination == AnimalCombination.LAC_COW and pen.average_milk_production == 0.0:
-            for animal in pen.animals_in_pen:
-                pen.animals_in_pen[animal].daily_milking_update_without_history()
+                for animal in pen.animals_in_pen:
+                    pen.animals_in_pen[animal].daily_milking_update_without_history()
         if pen.animal_combination == AnimalCombination.CALF:
+            pen.handle_calf_ration(self.is_ration_defined_by_user, pen_available_feeds, current_temperature)
+        elif self.is_ration_defined_by_user is True:
             pen.use_user_defined_ration(pen_available_feeds, current_temperature)
         else:
             pen.formulate_optimized_ration(
