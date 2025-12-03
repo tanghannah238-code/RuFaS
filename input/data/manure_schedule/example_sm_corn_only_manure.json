@@ -1,0 +1,31 @@
+{
+  "years": [
+    2013
+  ],
+  "days": [
+    124
+  ],
+  "nitrogen_masses": [
+    571
+  ],
+  "phosphorus_masses": [
+    285
+  ],
+  "potassium_masses": [
+    857
+  ],
+  "coverage_fractions": [
+    1
+  ],
+  "application_depths": [
+    30.0
+  ],
+  "surface_remainder_fractions": [
+    0.20],
+  "manure_types": [
+    "liquid"
+  ],
+  "supplement_manure_nutrient_deficiencies": ["manure"],
+  "pattern_repeat": 10,
+  "pattern_skip": 0
+}
