@@ -391,7 +391,7 @@ class EmissionsEstimator:
             for field_name in harvest_yield_by_field
             for harvest_date in sorted(list(harvest_yield_by_field[field_name].keys()))
         )
-        harvest_dates_by_feed_id: dict[RUFAS_ID, list[int]] = {}
+        harvest_dates_by_feed_id = {}
         for feed_id in all_feed_ids:
             harvest_dates = []
             for field_name in harvest_yield_by_field:
