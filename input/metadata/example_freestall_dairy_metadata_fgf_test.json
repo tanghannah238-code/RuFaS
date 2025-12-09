@@ -241,7 +241,7 @@
     "feed_storage_configurations": {
       "title": "Feed Management",
       "description": "Configurations for feed storage units.",
-      "path": "input/data/feed_management/example_feed_storage_configs.json",
+      "path": "input/data/feed_management/example_feed_storage_configs_test.json",
       "type": "json",
       "properties": "feed_storage_configurations"
     },
