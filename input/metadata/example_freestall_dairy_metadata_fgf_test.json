@@ -115,7 +115,7 @@
     "field_1": {
       "title": "Field specification",
       "description": "Field characteristics and references to field management specifications.",
-      "path": "input/data/field/example_small_field_corn_only.json",
+      "path": "input/data/field/example_small_field_corn_alf_silage.json",
       "type": "json",
       "properties": "field_properties"
     }, 
