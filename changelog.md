@@ -344,6 +344,7 @@ v1.0.0
 - [2744](https://github.com/RuminantFarmSystems/RuFaS/pull/2744) - [minor change] [NoInputChange] [NoOutputChange] Update the OM and RG wiki with new report filter options.
 - [2881](https://github.com/RuminantFarmSystems/RuFaS/pull/2881) - [minor change] [NoInputChange] [NoOutputChange] Add v1.0.0 release notes.
 - [2917](https://github.com/RuminantFarmSystems/RuFaS/pull/2827) - [minor change] [Metadata] [NoInputChange] [NoOutputChange] Updates ration-related metadata descriptions.
+- [2917](https://github.com/RuminantFarmSystems/RuFaS/pull/2827) - [minor change] [NoInputChange] [NoOutputChange] Adds v1.0.0 evaluation report to wiki and reslease notes
 
 ### v0.9.2
 
